@@ -1,0 +1,22 @@
+# ==============================
+# JARVIS - Ana Konfigürasyon
+# ==============================
+
+# --- LLM Ayarları ---
+llm:
+  provider: "ollama"                    # Hangi LLM backend kullanılacak
+  base_url: "http://localhost:11434"    # Ollama HTTP endpoint
+  model: "qwen2.5:7b"                   # Kullanılacak model
+  temperature: 0.1                      # Düşük = deterministik (tool calling için ideal) (Yaratıcılık)
+  max_tokens: 2048                      # Tek yanıtta maks token sayısı
+
+# --- Asistan Ayarları ---
+assistant:
+  name: "Jarvis"
+  language: "tr"                        # System prompt dili
+  debug: true                           # Ara adımları terminale bas
+
+# --- Loglama ---
+logging:
+  level: "DEBUG"                        # DEBUG | INFO | WARNING | ERROR
+  file: "jarvis.log"                    # Log dosyası (null = sadece terminal)
