@@ -15,7 +15,10 @@ from rich.panel import Panel
 from tools.system.terminal import run_terminal
 from tools.system.file_ops import read_file, write_file, list_directory, delete_file, move_file, copy_file, append_to_file
 from tools.system.app_launcher import open_app, close_app, list_running_apps
-from tools.web.search import web_search
+from tools.system.sysinfo import system_info
+from tools.system.notes import add_note, list_notes, delete_note, edit_note, search_notes
+from tools.system.media import media_control
+from tools.web.search import web_search, web_fetch
 
 from core.orchestrator import Orchestrator
 from utils.logger import setup_logger

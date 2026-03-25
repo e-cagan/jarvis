@@ -8,3 +8,4 @@ numpy==1.26.4
 webrtcvad==2.0.10
 piper-tts==1.2.0
 openwakeword==0.6.0
+beautifulsoup4==4.12.3
