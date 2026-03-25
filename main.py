@@ -9,9 +9,13 @@ from rich.panel import Panel
 # Tool'ları import et — import sırasında @registry.register çalışır ve tool'lar kaydolur
 # Yeni tool eklendiğinde buraya bir import satırı eklenmeli
 from tools.system.terminal import run_terminal
+from tools.system.file_ops import read_file, write_file, list_directory, delete_file, move_file, append_to_file, copy_file
+from tools.system.app_launcher import open_app, close_app, list_running_apps
+from tools.web.search import web_search
 
 from core.orchestrator import Orchestrator
 from utils.logger import setup_logger
+
 
 logger = setup_logger("main")
 console = Console()
