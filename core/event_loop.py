@@ -1,12 +1,12 @@
 # core/event_loop.py
 # Ses tabanlı etkileşim döngüsü.
-# Dinle → Transkribe → İşle → Seslendir → Tekrarla
-# Text modundaki REPL döngüsünün ses versiyonu.
+# Wake word → Dinle → Transkribe → İşle → Seslendir → Tekrarla
 
 from rich.console import Console
 
 from core.orchestrator import Orchestrator
 from stt.whisper_stt import WhisperSTT
+from stt.wake_word import WakeWordDetector
 from tts.piper_tts import PiperTTS
 from utils.audio import AudioRecorder
 from utils.logger import setup_logger
@@ -19,108 +19,96 @@ class VoiceEventLoop:
     """
     Ses tabanlı Jarvis döngüsü.
 
-    Bileşenler:
-    - AudioRecorder: Mikrofon + VAD ile ses kaydı
-    - WhisperSTT: Ses → metin
-    - Orchestrator: Metin → LLM → Tool → Yanıt
-    - PiperTTS: Yanıt → ses
-
-    Döngü her turda:
-    1. Kullanıcıyı dinle (VAD ile konuşma algıla)
-    2. Sesi metne çevir (Whisper)
-    3. Metni işle (Orchestrator — LLM + tool'lar)
-    4. Yanıtı seslendir (Piper)
-    5. Tekrarla
+    Akış:
+    1. Wake word bekle ("Hey Jarvis")
+    2. Kullanıcıyı dinle (VAD ile konuşma algıla)
+    3. Sesi metne çevir (Whisper)
+    4. Metni işle (Orchestrator — LLM + tool'lar)
+    5. Yanıtı seslendir (Piper)
+    6. Wake word beklemeye geri dön
     """
 
     def __init__(self):
         console.print("[dim]Bileşenler yükleniyor...[/dim]")
 
-        # Sıra önemli — en uzun süren (Whisper model yükleme) ilk başlasın
         self.stt = WhisperSTT()
         self.tts = PiperTTS()
         self.recorder = AudioRecorder()
         self.orchestrator = Orchestrator()
+        self.wake_word = WakeWordDetector()
 
         logger.info("VoiceEventLoop başlatıldı — tüm bileşenler hazır")
 
     def run(self):
-        """
-        Ana ses döngüsünü başlatır.
-        Ctrl+C ile çıkılır.
-        """
+        """Ana ses döngüsü."""
         console.print("\n[bold cyan]Jarvis sesli modda hazır![/bold cyan]")
-        console.print("[dim]Konuşmaya başla... (Ctrl+C ile çık)[/dim]\n")
+        console.print("[dim]\"Hey Jarvis\" diyerek başla... (Ctrl+C ile çık)[/dim]\n")
 
-        # Başlangıç selamı
         self._greet()
 
         while True:
             try:
-                # 1. Dinle
+                # 1. Wake word bekle
+                console.print("[dim]\"Hey Jarvis\" diyerek uyandır...[/dim]")
+                self.wake_word.wait_for_wakeword()
+
+                # Kısa bir onay sesi / geri bildirim
+                console.print("[bold cyan]Evet?[/bold cyan]")
+
+                # 2. Dinle
                 console.print("[dim]Dinliyorum...[/dim]")
                 audio = self.recorder.listen()
 
                 if audio is None:
-                    logger.warning("Ses kaydı başarısız, tekrar dinleniyor")
+                    logger.warning("Ses kaydı başarısız, tekrar bekleniyor")
                     continue
 
-                # 2. Transkribe et
+                # 3. Transkribe et
                 text = self.stt.transcribe(audio)
 
                 if not text:
-                    logger.debug("Transkripsiyon boş, tekrar dinleniyor")
+                    logger.debug("Transkripsiyon boş, tekrar bekleniyor")
                     continue
 
-                # Kullanıcının dediğini terminalde göster
                 console.print(f"\n[bold green]Sen →[/bold green] {text}")
 
-                # Çıkış komutları (sesli)
+                # Çıkış komutları
                 if self._is_exit_command(text):
                     self._farewell()
                     break
 
-                # Sıfırlama komutu
+                # Sıfırlama
                 if self._is_reset_command(text):
                     self.orchestrator.reset()
                     self.tts.speak("Konuşma geçmişi sıfırlandı.")
                     console.print("[dim]Konuşma geçmişi sıfırlandı.[/dim]")
                     continue
 
-                # 3. Orchestrator'a gönder
+                # 4. İşle
                 response = self.orchestrator.process(text)
-
-                # Yanıtı terminalde göster
                 console.print(f"\n[bold cyan]Jarvis →[/bold cyan] {response}")
 
-                # 4. Seslendir
+                # 5. Seslendir
                 self.tts.speak(response)
 
             except KeyboardInterrupt:
                 self._farewell()
                 break
-
             except Exception as e:
                 logger.error("Döngü hatası: %s", e)
                 console.print(f"[bold red]Hata:[/bold red] {e}")
 
     def _greet(self):
-        """Başlangıç selamı."""
-        greeting = "Merhaba, ben Jarvis. Seni dinliyorum."
+        greeting = "Hazırım. Hey Jarvis diyerek beni çağırabilirsin."
         console.print(f"\n[bold cyan]Jarvis →[/bold cyan] {greeting}")
         self.tts.speak(greeting)
 
     def _farewell(self):
-        """Kapanış selamı."""
         farewell = "Görüşürüz!"
         console.print(f"\n[bold cyan]Jarvis →[/bold cyan] {farewell}")
         self.tts.speak(farewell)
 
     def _is_exit_command(self, text):
-        """
-        Transkripsiyon metninin çıkış komutu olup olmadığını kontrol eder.
-        Whisper bazen büyük/küçük harf, noktalama ekleyebilir — normalize ediyoruz.
-        """
         normalized = text.strip().lower().rstrip(".,!?")
         exit_phrases = [
             "çık", "kapat", "kapan", "görüşürüz",
@@ -130,6 +118,5 @@ class VoiceEventLoop:
         return normalized in exit_phrases
 
     def _is_reset_command(self, text):
-        """Sıfırlama komutu kontrolü."""
         normalized = text.strip().lower().rstrip(".,!?")
         return normalized in ["sıfırla", "reset", "temizle"]

@@ -166,6 +166,13 @@ class AudioRecorder:
             audio_float32 = audio_int16.astype(np.float32) / 32768.0  # 16-bit normalize
 
             logger.info("Ses kaydı tamamlandı → %.2f saniye", len(audio_float32) / self.sample_rate)
+
+            # Çok kısa kayıtları filtrele (0.5 saniyeden kısa = muhtemelen gürültü)
+            min_duration = 0.5  # saniye
+            if len(audio_float32) / self.sample_rate < min_duration:
+                logger.debug("Kayıt çok kısa (%.2fs), atlanıyor", len(audio_float32) / self.sample_rate)
+                return None
+            
             return audio_float32
 
         except sd.PortAudioError as e:
