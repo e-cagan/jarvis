@@ -17,6 +17,7 @@ from tools.system.file_ops import read_file, write_file, list_directory, delete_
 from tools.system.app_launcher import open_app, close_app, list_running_apps
 from tools.system.sysinfo import system_info
 from tools.system.notes import add_note, list_notes, delete_note, edit_note, search_notes
+from tools.system.memory import remember, recall_memory, forget
 from tools.system.media import media_control
 from tools.web.search import web_search, web_fetch
 
