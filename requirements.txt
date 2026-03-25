@@ -2,3 +2,8 @@ pyyaml==6.0.2
 requests==2.32.3
 rich==13.9.4
 duckduckgo-search==7.5.1
+faster-whisper==1.1.1
+sounddevice==0.5.1
+numpy==1.26.4
+webrtcvad==2.0.10
+piper-tts==1.2.0
