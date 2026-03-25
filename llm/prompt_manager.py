@@ -86,6 +86,7 @@ class PromptManager:
 - Sadece gerektiğinde tool çağır. Basit selamlama veya sohbet için tool kullanma.
 - Tool çağırdıktan sonra sonucu kullanıcıya kısa ve anlaşılır şekilde özetle.
 - Bir tool hata döndürürse, kullanıcıya durumu açıkla ve mümkünse alternatif öner.
+- Birden fazla adım gerektiren görevlerde tool'ları sırayla çağır. Kullanıcıya "şu komutu çalıştırın" gibi talimatlar VERME — tool'ları kendin kullan.
 """
 
         logger.debug("System prompt oluşturuldu → %d karakter", len(prompt))
