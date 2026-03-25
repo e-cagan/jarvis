@@ -4,19 +4,36 @@
 
 # --- LLM Ayarları ---
 llm:
-  provider: "ollama"                    # Hangi LLM backend kullanılacak
-  base_url: "http://localhost:11434"    # Ollama HTTP endpoint
-  model: "qwen2.5:7b"                   # Kullanılacak model
-  temperature: 0.1                      # Düşük = deterministik (tool calling için ideal) (Yaratıcılık)
-  max_tokens: 2048                      # Tek yanıtta maks token sayısı
+  provider: "ollama"
+  base_url: "http://localhost:11434"
+  model: "qwen2.5:7b"
+  temperature: 0.1
+  max_tokens: 2048
+
+# --- STT (Speech-to-Text) Ayarları ---
+stt:
+  provider: "faster_whisper"
+  model_size: "medium"           # tiny, base, small, medium, large-v3
+  language: "tr"                 # Türkçe — model dil algılamayı atlar, hız kazanır
+  device: "cuda"                 # cuda (GPU) veya cpu
+  compute_type: "float16"        # float16 (GPU), int8 (CPU) — GPU'da float16 en hızlı
+  silence_threshold: 0.8         # Kaç saniye sessizlik = konuşma bitti (saniye)
+  sample_rate: 16000             # Whisper 16kHz bekliyor — değiştirme
+
+# --- TTS (Text-to-Speech) Ayarları ---
+tts:
+  provider: "piper"
+  model_path: "models/piper/tr_TR-dfki-medium.onnx"   # Piper model dosyası
+  speaker_id: 0                  # Bazı modellerde birden fazla ses var
+  speech_rate: 1.0               # Konuşma hızı (1.0 = normal)
 
 # --- Asistan Ayarları ---
 assistant:
   name: "Jarvis"
-  language: "tr"                        # System prompt dili
-  debug: true                           # Ara adımları terminale bas
+  language: "tr"
+  debug: true
 
 # --- Loglama ---
 logging:
-  level: "DEBUG"                        # DEBUG | INFO | WARNING | ERROR
-  file: "jarvis.log"                    # Log dosyası (null = sadece terminal)
+  level: "DEBUG"
+  file: "jarvis.log"
