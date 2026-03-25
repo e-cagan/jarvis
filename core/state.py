@@ -184,18 +184,82 @@ class LongTermMemory:
     def add_fact(self, fact):
         """
         Yeni bir bilgi ekler.
-        Aynı bilgi tekrar eklenmez (basit duplicate check).
-        """
-        # Basit duplicate kontrolü — tam eşleşme
-        fact_lower = fact.strip().lower()
-        for existing in self.facts:
-            if existing.strip().lower() == fact_lower:
-                logger.debug("Bilgi zaten mevcut, atlanıyor: %s", fact)
-                return
+        Mevcut bilgilerle benzerlik kontrolü yapar:
+        - Çok benzer bilgi varsa → günceller (eski yerine yeni koyar)
+        - Benzer bilgi yoksa → yeni ekler
 
-        self.facts.append(fact.strip())
-        self._save()
-        logger.info("Yeni bilgi kaydedildi → %s", fact)
+        Benzerlik metriği: Jaccard similarity
+        İki cümledeki ortak kelimelerin, toplam benzersiz kelime sayısına oranı.
+        Eşik 0.5 = kelimelerin yarısından fazlası ortaksa "aynı konu" sayılır.
+        """
+        similarity_threshold = 0.5
+
+        best_match_index = -1
+        best_score = 0.0
+
+        fact_words = self._tokenize(fact)
+
+        for i, existing in enumerate(self.facts):
+            existing_words = self._tokenize(existing)
+            score = self._jaccard_similarity(fact_words, existing_words)
+
+            if score > best_score:
+                best_score = score
+                best_match_index = i
+
+        if best_score >= similarity_threshold and best_match_index >= 0:
+            # Benzer bilgi bulundu — güncelle
+            old_fact = self.facts[best_match_index]
+            self.facts[best_match_index] = fact.strip()
+            self._save()
+            logger.info("Bilgi güncellendi → '%s' → '%s' (benzerlik: %.2f)", old_fact, fact, best_score)
+            return "updated"
+        else:
+            # Yeni bilgi — ekle
+            self.facts.append(fact.strip())
+            self._save()
+            logger.info("Yeni bilgi kaydedildi → %s", fact)
+            return "added"
+
+    def _tokenize(self, text):
+        """
+        Metni küçük harfli kelime setine çevirir.
+        Noktalama temizlenir — sadece kelimeler kalır.
+        Set kullanıyoruz çünkü Jaccard set operasyonlarıyla çalışır.
+        """
+        # Basit tokenization — boşlukla böl, noktalama temizle
+        words = text.lower().split()
+        # Noktalama karakterlerini kaldır
+        cleaned = set()
+        for w in words:
+            w = w.strip(".,!?;:'\"()[]{}").strip()
+            if w:
+                cleaned.add(w)
+        return cleaned
+
+    def _jaccard_similarity(self, set_a, set_b):
+        """
+        İki kelime seti arasındaki Jaccard benzerliğini hesaplar.
+
+        Jaccard = |A ∩ B| / |A ∪ B|
+
+        Örnek:
+            A = {"kullanıcının", "favori", "dili", "python"}
+            B = {"kullanıcının", "favori", "dili", "rust"}
+            Kesişim = {"kullanıcının", "favori", "dili"} → 3
+            Birleşim = {"kullanıcının", "favori", "dili", "python", "rust"} → 5
+            Jaccard = 3/5 = 0.6 → eşik 0.5'i aşıyor → güncelle
+
+        Dönüş:
+            float: 0.0 (hiç benzemez) — 1.0 (aynı)
+        """
+        if not set_a or not set_b:
+            return 0.0
+
+        intersection = set_a & set_b  # Kesişim
+        union = set_a | set_b         # Birleşim
+
+        return len(intersection) / len(union)
 
     def get_facts(self):
         """Tüm bilgileri döndürür."""

@@ -15,6 +15,7 @@ memory = LongTermMemory()
 @registry.register(
     name="remember",
     description="Kullanıcı hakkında önemli bir bilgiyi kalıcı olarak hafızaya kaydeder. "
+                "Eğer benzer bir bilgi zaten varsa otomatik günceller. "
                 "Kullanıcı 'bunu hatırla', 'adım şu', 'şunu unutma' gibi ifadeler kullandığında kullanılır.",
     parameters={
         "type": "object",
@@ -28,8 +29,10 @@ memory = LongTermMemory()
     }
 )
 def remember(fact):
-    """Bilgiyi uzun süreli hafızaya kaydeder."""
-    memory.add_fact(fact)
+    """Bilgiyi uzun süreli hafızaya kaydeder veya günceller."""
+    result = memory.add_fact(fact)
+    if result == "updated":
+        return f"Bilgi güncellendi: {fact}"
     return f"Hatırladım: {fact}"
 
 
