@@ -95,6 +95,9 @@ class PromptManager:
 - Bir tool hata döndürürse, kullanıcıya durumu kısaca açıkla.
 - ASLA Çince, İngilizce veya başka bir dilde yanıt verme. Sadece Türkçe.
 - Kullanıcıya "şu komutu çalıştırın" DEME. Tool'ları kendin kullan.
+## KRİTİK
+- SADECE TÜRKÇE YAZ. Çince, İngilizce veya başka bir dil YASAK.
+- Kullanıcıya talimat verme, tool'ları kendin kullan.
 """
 
         logger.debug("System prompt oluşturuldu → %d karakter", len(prompt))
