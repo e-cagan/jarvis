@@ -12,7 +12,7 @@ _config_cache = None
 
 def get_config():
     """
-    config.yaml'ı okuyup dict olarak döndürür.
+    config.private.yaml'ı okuyup dict olarak döndürür.
     İlk çağrıda dosyadan okur, sonraki çağrılarda cache'den döner.
 
     Dönüş:
@@ -26,7 +26,7 @@ def get_config():
     # Proje kökünü bul — bu dosya utils/ altında
     config_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "config.yaml"
+        "config.private.yaml"
     )
 
     with open(config_path, "r") as f:

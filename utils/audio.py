@@ -22,7 +22,7 @@ def _load_stt_config():
     """Config'den STT ayarlarını okur."""
     config_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "config.yaml"
+        "config.private.yaml"
     )
     with open(config_path, "r") as f:
         config = yaml.safe_load(f)

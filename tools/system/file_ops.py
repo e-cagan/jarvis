@@ -50,7 +50,7 @@ def _validate_path(path):
         "properties": {
             "path": {
                 "type": "string",
-                "description": "Okunacak dosyanın yolu (örn: '~/belgeler/notlar.txt', 'config.yaml')"
+                "description": "Okunacak dosyanın yolu (örn: '~/belgeler/notlar.txt', 'config.private.yaml')"
             }
         },
         "required": ["path"]

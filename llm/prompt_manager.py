@@ -18,7 +18,7 @@ def _load_assistant_config():
     """Config'den assistant bölümünü okur."""
     config_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "config.yaml"
+        "config.private.yaml"
     )
 
     with open(config_path, "r") as f:

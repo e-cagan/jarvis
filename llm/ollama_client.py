@@ -16,13 +16,13 @@ logger = setup_logger("ollama_client")
 
 def _load_llm_config():
     """
-    config.yaml'dan LLM ayarlarını okur.
+    config.private.yaml'dan LLM ayarlarını okur.
     Neden burada ayrı okuyoruz? Çünkü bu modül sadece kendi config'ini bilmeli,
     tüm config'i taşımak gereksiz coupling yaratır.
     """
     config_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "config.yaml"
+        "config.private.yaml"
     )
 
     with open(config_path, "r") as f:

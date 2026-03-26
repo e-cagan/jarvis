@@ -10,16 +10,16 @@ import yaml
 
 def _load_config():
     """
-    config.yaml dosyasını okuyup dict olarak döndürür.
+    config.private.yaml dosyasını okuyup dict olarak döndürür.
     Logger projenin ilk kurulan parçası olduğu için
     config okumayı kendi içinde yapıyor — başka modüle bağımlı değil.
     """
-    # Bu dosya utils/ klasöründe, config.yaml bir üst dizinde
+    # Bu dosya utils/ klasöründe, config.private.yaml bir üst dizinde
     # __file__ → bu dosyanın mutlak yolu
     # dirname ile iki kez yukarı çıkıyoruz: utils/ → jarvis/
     config_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "config.yaml"
+        "config.private.yaml"
     )
 
     with open(config_path, "r") as f:
