@@ -67,12 +67,13 @@ class PromptManager:
         """
         # Tool isimlerini ve açıklamalarını prompt'a ekle
         # Model hangi tool'ların mevcut olduğunu bilmeli
+        username = os.path.expanduser("~")
         tool_schemas = self.registry.get_all_schemas()
         tool_descriptions = ""
         for tool in tool_schemas:
             tool_descriptions += f"- {tool['name']}: {tool['description']}\n"
 
-        prompt = f"""Sen {self.name}, kişisel bir sesli yapay zeka asistanısın.
+        prompt = f"""Sen {self.name}, kişisel bir sesli yapay zeka asistanısın. Kullanıcının home dizini: {username}
 
 ## Temel Kurallar
 - Her zaman Türkçe yanıt ver.
@@ -92,6 +93,8 @@ class PromptManager:
 - Sadece gerektiğinde tool çağır. Basit selamlama veya sohbet için tool kullanma.
 - Tool çağırdıktan sonra sonucu kullanıcıya kısa ve doğal bir dille özetle.
 - Bir tool hata döndürürse, kullanıcıya durumu kısaca açıkla.
+- ASLA Çince, İngilizce veya başka bir dilde yanıt verme. Sadece Türkçe.
+- Kullanıcıya "şu komutu çalıştırın" DEME. Tool'ları kendin kullan.
 """
 
         logger.debug("System prompt oluşturuldu → %d karakter", len(prompt))

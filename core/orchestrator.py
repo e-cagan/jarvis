@@ -21,7 +21,7 @@ class Orchestrator:
 
         # Memory sistemi — memory tool'undan global instance'ı al
         # Bu import burada çünkü circular import'u önlemek için
-        from tools.system.memory import memory
+        from tools.consolidated.memory_manager import memory
         self.memory = memory
 
         # Conversation state — session persistence

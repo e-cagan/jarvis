@@ -28,7 +28,7 @@ class ConversationState:
     - System prompt'u her zaman koruma (ilk mesaj)
     """
 
-    def __init__(self, max_messages=40):
+    def __init__(self, max_messages=30):
         """
         Parametreler:
             max_messages (int): Maksimum mesaj sayısı (system prompt hariç).

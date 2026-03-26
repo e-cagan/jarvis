@@ -13,13 +13,13 @@ from rich.panel import Panel
 
 # Tool'ları import et — import sırasında @registry.register çalışır
 from tools.system.terminal import run_terminal
-from tools.system.file_ops import read_file, write_file, list_directory, delete_file, move_file, copy_file, append_to_file
-from tools.system.app_launcher import open_app, close_app, list_running_apps
 from tools.system.sysinfo import system_info
-from tools.system.notes import add_note, list_notes, delete_note, edit_note, search_notes
-from tools.system.memory import remember, recall_memory, forget
 from tools.system.media import media_control
-from tools.web.search import web_search, web_fetch
+from tools.consolidated.file_manager import file_manager
+from tools.consolidated.notes_manager import notes
+from tools.consolidated.app_control import app_control
+from tools.consolidated.memory_manager import memory_tool
+from tools.consolidated.web_tools import web
 
 from core.orchestrator import Orchestrator
 from utils.logger import setup_logger
