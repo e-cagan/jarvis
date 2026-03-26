@@ -19,19 +19,39 @@ class Orchestrator:
         self.tool_registry = registry
         self.max_tool_rounds = 5
 
-        # Memory sistemi — memory tool'undan global instance'ı al
-        # Bu import burada çünkü circular import'u önlemek için
         from tools.consolidated.memory_manager import memory
         self.memory = memory
 
-        # Conversation state — session persistence
-        self.state = ConversationState(max_messages=40)
+        self.state = ConversationState(max_messages=16)
 
-        # System prompt'u memory bilgileriyle oluştur ve state'i başlat
         system_prompt = self._build_system_prompt()
         self.state.initialize(system_prompt)
 
-        logger.info("Orchestrator başlatıldı (memory destekli)")
+        # Scheduler başlat ve callback'i ayarla
+        from core.scheduler import JarvisScheduler
+        from tools.consolidated.scheduler_tool import set_scheduler
+        self.scheduler = JarvisScheduler()
+        self.scheduler.set_callback(self._execute_scheduled_task)
+        set_scheduler(self.scheduler)
+
+        logger.info("Orchestrator başlatıldı (memory + scheduler destekli)")
+
+    def _execute_scheduled_task(self, command):
+        """
+        Scheduler'dan gelen komutu çalıştırır.
+        Yeni bir context'te çalışır — mevcut konuşmayı kirletmez.
+        """
+        logger.info("Zamanlı görev çalışıyor → '%s'", command)
+
+        from rich.console import Console
+        console = Console()
+        console.print(f"\n[bold yellow]⏰ Zamanlı görev:[/bold yellow] {command}")
+
+        # process() çağır — tool call dahil her şey çalışır
+        result = self.process(command)
+        console.print(f"[bold cyan]Jarvis →[/bold cyan] {result}\n")
+
+        return result
 
     def _build_system_prompt(self):
         """Memory bilgilerini system prompt'a enjekte eder."""
