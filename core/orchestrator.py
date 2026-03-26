@@ -103,6 +103,84 @@ class Orchestrator:
 
         logger.warning("Maksimum tool round'una ulaşıldı (%d)", self.max_tool_rounds)
         return "Üzgünüm, isteğinizi işlerken çok fazla adım gerekti."
+    
+    def process_stream(self, user_input):
+        """
+        Streaming versiyonu — text modda kullanılır.
+        Tool call'larda streaming yok (tool sonucu beklenir).
+        Son metin yanıtında token token yield eder.
+
+        Dönüş:
+            generator: Her iterasyonda bir token string'i
+            veya tool call varsa tool'u çalıştırıp sonra streaming yapar
+        """
+        self.state.add_message({"role": "user", "content": user_input})
+        logger.info("Kullanıcı → %s", user_input)
+
+        tool_schemas = self.prompt_manager.get_tool_schemas()
+
+        for round_num in range(self.max_tool_rounds):
+            logger.debug("LLM round %d/%d (stream)", round_num + 1, self.max_tool_rounds)
+
+            try:
+                messages = self.state.get_messages()
+
+                if not tool_schemas:
+                    # Tool yok — düz streaming
+                    result = self.llm.generate_stream_with_tools(messages, [])
+                    if isinstance(result, dict):
+                        text = result.get("content", "")
+                        self.state.add_message({"role": "assistant", "content": text})
+                        yield text
+                        return
+                    else:
+                        full_text = ""
+                        for token in result:
+                            full_text += token
+                            yield token
+                        self.state.add_message({"role": "assistant", "content": full_text})
+                        return
+
+                result = self.llm.generate_stream_with_tools(messages, tool_schemas)
+
+            except (ConnectionError, TimeoutError) as e:
+                logger.error("LLM iletişim hatası: %s", e)
+                yield f"Hata: LLM'e bağlanılamadı — {e}"
+                return
+
+            if isinstance(result, dict):
+                # Tool call — execute et, loop devam etsin
+                parsed = result
+                if parsed.get("type") == "tool_call":
+                    tool_name = parsed["name"]
+                    tool_args = parsed["arguments"]
+
+                    logger.info("Tool çağrısı → %s(%s)", tool_name, tool_args)
+                    tool_result = self.tool_registry.execute(tool_name, tool_args)
+
+                    self.state.add_message({
+                        "role": "assistant",
+                        "content": "",
+                        "tool_calls": [{"function": {"name": tool_name, "arguments": tool_args}}]
+                    })
+                    self.state.add_message({"role": "tool", "content": tool_result})
+                    continue
+                else:
+                    text = parsed.get("content", "")
+                    self.state.add_message({"role": "assistant", "content": text})
+                    yield text
+                    return
+            else:
+                # Generator — token token stream et
+                full_text = ""
+                for token in result:
+                    full_text += token
+                    yield token
+                self.state.add_message({"role": "assistant", "content": full_text})
+                logger.info("Jarvis (stream) → %s", full_text[:200])
+                return
+
+        yield "Üzgünüm, çok fazla adım gerekti."
 
     def reset(self):
         """Konuşma geçmişini sıfırlar. Uzun süreli hafıza korunur."""

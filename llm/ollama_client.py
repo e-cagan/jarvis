@@ -175,3 +175,97 @@ class OllamaClient(LLMBase):
             content = message.get("content", "")
             logger.debug("Düz metin yanıt → %d karakter", len(content))
             return {"type": "text", "content": content}
+    
+    def generate_stream_with_tools(self, messages, tools):
+        """
+        Streaming + tool calling destekli yanıt.
+        Tool call → dict döner. Text → generator döner.
+        """
+        ollama_tools = []
+        for tool in tools:
+            ollama_tools.append({
+                "type": "function",
+                "function": {
+                    "name": tool["name"],
+                    "description": tool["description"],
+                    "parameters": tool["parameters"]
+                }
+            })
+
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "tools": ollama_tools,
+            "stream": True,
+            "options": {
+                "temperature": self.temperature,
+                "num_predict": self.max_tokens
+            }
+        }
+
+        logger.debug("Ollama streaming istek → %d mesaj, %d tool", len(messages), len(tools))
+
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/chat",
+                json=payload,
+                stream=True,
+                timeout=120
+            )
+            response.raise_for_status()
+        except requests.ConnectionError:
+            raise ConnectionError("Ollama sunucusuna bağlanılamadı.")
+        except requests.Timeout:
+            raise TimeoutError("Ollama yanıt vermedi.")
+
+        import json as json_module
+
+        # Tek bir iterator oluştur — tüm okumalar bundan yapılacak
+        lines_iter = response.iter_lines()
+
+        # İlk chunk'ı oku — tool call mı text mi?
+        first_chunk = None
+        for line in lines_iter:
+            if line:
+                first_chunk = json_module.loads(line)
+                break
+
+        if first_chunk is None:
+            response.close()
+            return {"type": "text", "content": ""}
+
+        message = first_chunk.get("message", {})
+        tool_calls = message.get("tool_calls")
+
+        if tool_calls and len(tool_calls) > 0:
+            func_data = tool_calls[0].get("function", {})
+            result = {
+                "type": "tool_call",
+                "name": func_data.get("name", ""),
+                "arguments": func_data.get("arguments", {})
+            }
+            logger.info("Stream tool call → %s(%s)", result["name"], result["arguments"])
+            response.close()
+            return result
+
+        # Text — aynı iterator'ı kullanarak generator döndür
+        def token_generator():
+            # İlk chunk'ın içeriği
+            first_content = message.get("content", "")
+            if first_content:
+                yield first_content
+
+            # Kalan chunk'lar — AYNI iterator
+            for line in lines_iter:
+                if line:
+                    try:
+                        chunk = json_module.loads(line)
+                        if chunk.get("done"):
+                            break
+                        content = chunk.get("message", {}).get("content", "")
+                        if content:
+                            yield content
+                    except json_module.JSONDecodeError:
+                        continue
+
+        return token_generator()

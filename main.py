@@ -7,6 +7,7 @@
 #   python3 main.py --voice  → doğrudan voice mod
 
 import sys
+import logging
 
 from rich.console import Console
 from rich.panel import Panel
@@ -39,7 +40,7 @@ def print_banner():
 
 
 def run_text_mode():
-    """Text tabanlı REPL döngüsü."""
+    """Text tabanlı REPL döngüsü — streaming destekli."""
     try:
         orchestrator = Orchestrator()
     except Exception as e:
@@ -64,15 +65,21 @@ def run_text_mode():
                 console.print("[dim]Konuşma geçmişi sıfırlandı.[/dim]")
                 continue
 
-            response = orchestrator.process(user_input)
-            console.print(f"\n[bold cyan]Jarvis →[/bold cyan] {response}")
+            logging.getLogger().setLevel(logging.WARNING)  # Streaming sırasında logları sustur
+
+            console.print("\n[bold cyan]Jarvis →[/bold cyan] ", end="")
+            for token in orchestrator.process_stream(user_input):
+                console.print(token, end="", highlight=False)
+            console.print()
+
+            logging.getLogger().setLevel(logging.DEBUG)  # Logları geri aç
 
         except KeyboardInterrupt:
             console.print("\n[dim]Görüşürüz![/dim]")
             break
         except Exception as e:
             logger.error("Beklenmeyen hata: %s", e)
-            console.print(f"[bold red]Hata:[/bold red] {e}")
+            console.print(f"\n[bold red]Hata:[/bold red] {e}")
 
 
 def run_voice_mode():
