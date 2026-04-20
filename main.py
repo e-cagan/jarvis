@@ -23,6 +23,7 @@ from tools.consolidated.memory_manager import memory_tool
 from tools.consolidated.web_tools import web
 from tools.consolidated.email_tool import email_tool
 from tools.consolidated.scheduler_tool import scheduler
+from tools.consolidated.plugin_tool import plugins
 
 from core.orchestrator import Orchestrator
 from utils.logger import setup_logger

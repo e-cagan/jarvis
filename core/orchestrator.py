@@ -36,6 +36,20 @@ class Orchestrator:
 
         logger.info("Orchestrator başlatıldı (memory + scheduler destekli)")
 
+        # Plugin sistemi — plugins/ dizinindeki tool'ları otomatik yükle
+        from core.plugin_loader import PluginLoader
+        from tools.consolidated.plugin_tool import set_plugin_loader
+        self.plugin_loader = PluginLoader()
+        plugin_count = self.plugin_loader.discover_and_load()
+        set_plugin_loader(self.plugin_loader)
+
+        if plugin_count > 0:
+            # Plugin'ler yeni tool ekleyebilir — system prompt'u yeniden oluştur
+            system_prompt = self._build_system_prompt()
+            self.state.messages[0] = system_prompt
+
+        logger.info("Orchestrator başlatıldı (memory + scheduler + %d plugin)", plugin_count)
+
     def _execute_scheduled_task(self, command):
         """
         Scheduler'dan gelen komutu çalıştırır.
